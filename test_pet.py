@@ -9,6 +9,8 @@ TODO: Finish this test by...
 1) Troubleshooting and fixing the test failure
 The purpose of this test is to validate the response matches the expected schema defined in schemas.py
 '''
+
+
 def test_pet_schema():
     test_endpoint = "/pets/1"
 
@@ -19,6 +21,7 @@ def test_pet_schema():
     # Validate the response schema against the defined schema in schemas.py
     validate(instance=response.json(), schema=schemas.pet)
 
+
 '''
 TODO: Finish this test by...
 1) Extending the parameterization to include all available statuses
@@ -26,7 +29,9 @@ TODO: Finish this test by...
 3) Validate the 'status' property in the response is equal to the expected status
 4) Validate the schema for each object in the response
 '''
-@pytest.mark.parametrize("status", [("available")])
+
+
+@pytest.mark.parametrize("status", ["available", "sold", "pending"])
 def test_find_by_status_200(status):
     test_endpoint = "/pets/findByStatus"
     params = {
@@ -35,12 +40,30 @@ def test_find_by_status_200(status):
 
     response = api_helpers.get_api_data(test_endpoint, params)
     # TODO...
+    assert response.status_code == 200
+    pets = response.json()
+    assert isinstance(pets, list)
+    for pet in pets:
+        if "status" in pet:
+            assert pet["status"] == status
+        validate(instance=pet, schema=schemas.pet)
+
 
 '''
 TODO: Finish this test by...
 1) Testing and validating the appropriate 404 response for /pets/{pet_id}
 2) Parameterizing the test for any edge cases
 '''
-def test_get_by_id_404():
+
+
+@pytest.mark.parametrize("pet_id", [-1, 0, 999999])
+def test_get_by_id_404(pet_id):
     # TODO...
-    pass
+    test_endpoint = "/pets/{pet_id}"
+    response = api_helpers.get_api_data(test_endpoint)
+    # print(response.status_code, response.json())
+    assert_that(response.status_code, 404)
+    body = response.text
+
+    if "message" in body:
+        assert_that(body["message"].lower(), contains_string("not found"))
